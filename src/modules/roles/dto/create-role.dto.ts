@@ -1,10 +1,10 @@
 import { IsDefined, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class CreateContextDto {
+export class CreateRoleDto {
     @IsDefined({ message: 'Name is required' })
     @IsNotEmpty({ message: 'Name is required' })
     @IsString({ message: 'Name must be a string' })
-    @MaxLength(50, { message: 'Description must be shorter than or equal to 50 characters' })
+    @MaxLength(100, { message: 'Description must be shorter than or equal to 100 characters' })
     name: string;
 
     @IsOptional()
