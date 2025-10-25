@@ -2,7 +2,6 @@
 /dist
 /node_modules
 /build
-/tmp
 
 # Logs
 logs
@@ -21,4 +20,9 @@ lerna-debug.log*
 
 # temp directory
 .temp
-.tmp
+/tmp
+
+# Prisma
+/generated/prisma
+prisma/migrations/
+
