@@ -23,6 +23,7 @@ model Language {
   
   languageKeys LanguageKey[]
   translations Translation[]
+  users    User[]
 
   @@map("tb_languages")
 }
@@ -47,6 +48,8 @@ model Role {
   updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
+  users    User[]
+  userRoles UserRole[]
 
   @@map("tb_roles")
 }
@@ -108,3 +111,43 @@ model RolePermission {
 
   @@map("role_permissions")
 }
+
+enum UserStatus {
+  active
+  inactive
+}
+
+model User {
+  id         Int         @id @default(autoincrement())
+  username   String      @unique @db.VarChar(50)
+  email      String      @unique @db.VarChar(50)
+  password   String      @db.VarChar(255)
+  status     UserStatus  @default(active)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  roleId     Int?
+  role       Role?       @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  languageId Int?
+  language   Language?   @relation(fields: [languageId], references: [id], onDelete: SetNull)
+
+  userRoles UserRole[]
+
+  @@map("tb_users")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roleId    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("tb_user_roles")
+}
+
+
