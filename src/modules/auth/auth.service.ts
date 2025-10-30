@@ -37,8 +37,20 @@ export class AuthService {
         username: true,
         email: true,
         status: true,
-        roleId: true,
-        languageId: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        language: {
+          select: {
+            id: true,
+            key: true,
+            name: true,
+          },
+        },
+
       },
     });
 

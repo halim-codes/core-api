@@ -21,7 +21,15 @@ export class UsersService {
 
   // ---------------- READ ALL ----------------
   async findAll(): Promise<ApiResponse<User[]>> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+    include: {
+      role: true,
+      language: true,
+    },
+    orderBy: {
+      id: 'asc',
+    },
+  });
     const { data, meta, links } = formatList(users, '/users');
     return wrapResponse(data, meta, links);
   }
