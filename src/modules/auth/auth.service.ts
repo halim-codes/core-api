@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { AuthLoginDto } from './dto/create-auth.dto';
@@ -12,11 +17,21 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true },
+    });
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');
+
+    if (user.status === 'inactive') {
+      throw new ForbiddenException(
+        'Your account is inactive. Please contact the administrator.',
+      );
+    }
 
     return user;
   }
@@ -26,35 +41,56 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
     const token = this.jwtService.sign(payload);
 
-    return { accessToken: token, userId: user.id };
+    return {
+      message: 'Login successful',
+      accessToken: token,
+      userId: user.id,
+    };
   }
 
   async getCurrentUser(userId: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        status: true,
+      include: {
         role: {
-          select: {
-            id: true,
-            name: true,
+          include: {
+            rolePermissions: {
+              include: { permission: true },
+            },
           },
         },
-        language: {
-          select: {
-            id: true,
-            key: true,
-            name: true,
-          },
-        },
-
+        language: true,
       },
     });
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    const permissions =
+      user.role?.rolePermissions?.map((rp) => ({
+        id: rp.permission.id,
+        name: rp.permission.name,
+        endpoint: rp.permission.endpoint,
+      })) || [];
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      status: user.status,
+      role: user.role
+        ? {
+            id: user.role.id,
+            name: user.role.name,
+          }
+        : null,
+      language: user.language
+        ? {
+            id: user.language.id,
+            key: user.language.key,
+            name: user.language.name,
+          }
+        : null,
+      permissions,
+    };
   }
 }

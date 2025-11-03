@@ -38,4 +38,49 @@ export class RolesService {
     const role = await this.prisma.role.delete({ where: { id } });
     return wrapResponse(formatSingle(role, '/roles'));
   }
+
+  // ---------------- GET ROLE PERMISSIONS ----------------
+  async getRolePermissions(id: number) {
+    const role = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: { permission: true },
+        },
+      },
+    });
+
+    if (!role) throw new NotFoundException(`Role with id ${id} not found`);
+
+    const permissions = role.rolePermissions.map((rp) => rp.permission);
+    return wrapResponse({ roleId: id, permissions });
+  }
+
+  // ---------------- UPDATE ROLE PERMISSIONS ----------------
+  async updateRolePermissions(id: number, permissionIds: number[]) {
+    const role = await this.prisma.role.findUnique({ where: { id } });
+    if (!role) throw new NotFoundException(`Role with id ${id} not found`);
+
+    await this.prisma.rolePermission.deleteMany({ where: { roleId: id } });
+
+    const newLinks = permissionIds.map((permissionId) => ({
+      roleId: id,
+      permissionId,
+    }));
+
+    if (newLinks.length > 0) {
+      await this.prisma.rolePermission.createMany({ data: newLinks });
+    }
+
+    const updatedPermissions = await this.prisma.rolePermission.findMany({
+      where: { roleId: id },
+      include: { permission: true },
+    });
+
+    return wrapResponse({
+      message: 'Role permissions updated successfully',
+      roleId: id,
+      permissions: updatedPermissions.map((rp) => rp.permission),
+    });
+  }
 }

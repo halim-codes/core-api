@@ -14,7 +14,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Controller('roles')
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) { }
+  constructor(private readonly rolesService: RolesService) {}
 
   // ---------------- CREATE ----------------
   @Post()
@@ -36,7 +36,10 @@ export class RolesController {
 
   // ---------------- UPDATE ----------------
   @Patch(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateRoleDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateRoleDto,
+  ) {
     return this.rolesService.update(id, data);
   }
 
@@ -44,5 +47,20 @@ export class RolesController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.remove(id);
+  }
+
+  // ---------------- GET ROLE PERMISSIONS ----------------
+  @Get(':id/permissions')
+  async getRolePermissions(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.getRolePermissions(id);
+  }
+
+  // ---------------- UPDATE ROLE PERMISSIONS ----------------
+  @Patch(':id/permissions')
+  async updateRolePermissions(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('permissionIds') permissionIds: number[],
+  ) {
+    return this.rolesService.updateRolePermissions(id, permissionIds);
   }
 }
